@@ -3,62 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carica CSV e Visualizza Tabella</title>
-    <link rel="stylesheet" href="immmigrati.css">
-
+    <link rel="stylesheet" a href="style.css">
+    <title>Importazione CSV</title>
+   
 </head>
 <body>
-    <h1>Carica il tuo file CSV</h1>
-    
-    <input type="file" id="csvFile" accept=".csv">
-    
-
-    <table id="dataTable">
-        <thead>
-            <tr>
-                <th>Anno</th>
-                <th>Valore</th>
-            </tr>
-        </thead>
-        <tbody>
- 
-        </tbody>
-    </table>
+    <h1>Tabella Migranti
+    </h1>
+    <input type="file" onchange="readFile(this)" accept=".csv" />
+    <div id="tableContainer"></div>
 
     <script>
-        
-        document.getElementById('csvFile').addEventListener('change', function(event) {
-            const file = event.target.files[0];
+        function readFile(input) {
+            let file = input.files[0];
+
             if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const contents = e.target.result;
-                    parseCSV(contents);
-                };
+                let reader = new FileReader();
+
                 reader.readAsText(file);
+
+                reader.onload = function() {
+
+                    const content = reader.result;
+                    const data = parseCSV(content);
+                    createTable(data);
+                };
+
+                reader.onerror = function() {
+                    console.log(reader.error);
+                };
             }
-        });
+        }
 
-        
-        function parseCSV(data) {
-            const rows = data.split('\n');
-            const tableBody = document.querySelector('#dataTable tbody');
-            tableBody.innerHTML = ''; 
+        function parseCSV(csvText) {
+            const lines = csvText.split('\n');
+            const headers = lines[0].split(',').map(header => header.trim()); // Estrai le intestazioni
+            const rows = [];
 
-            rows.forEach(function(row) {
-                const columns = row.split('\t');
-                if (columns.length === 2) { 
-                    const tr = document.createElement('tr');
-                    const td1 = document.createElement('td');
-                    td1.textContent = columns[0]; 
-                    const td2 = document.createElement('td');
-                    td2.textContent = columns[1]; 
-                    tr.appendChild(td1);
-                    tr.appendChild(td2);
-                    tableBody.appendChild(tr);
+            for (let i = 1; i < lines.length; i++) {
+                const row = lines[i].split(',').map(cell => cell.trim());
+                if (row.length === headers.length) {
+                    const rowData = {};
+                    for (let j = 0; j < headers.length; j++) {
+                        rowData[headers[j]] = row[j];
+                    }
+                    rows.push(rowData);
                 }
+            }
+
+            return rows;
+        }
+
+        function createTable(data) {
+            let tableHtml = '<table>';
+           
+         
+            const headers = Object.keys(data[0]);
+            tableHtml += '<tr>';
+            headers.forEach(header => {
+                tableHtml += `<th>${header}</th>`;
             });
+            tableHtml += '</tr>';
+
+            data.forEach(row => {
+                tableHtml += '<tr>';
+                headers.forEach(header => {
+                    tableHtml += `<td>${row[header]}</td>`;
+                });
+                tableHtml += '</tr>';
+            });
+
+            tableHtml += '</table>';
+
+     
+            document.getElementById('tableContainer').innerHTML = tableHtml;
         }
     </script>
 </body>
 </html>
+
